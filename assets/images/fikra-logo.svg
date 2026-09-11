@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#196845"/>
+      <stop offset="100%" stop-color="#0E3D28"/>
+    </linearGradient>
+    <linearGradient id="bulbGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE49E"/>
+      <stop offset="50%" stop-color="#F3C352"/>
+      <stop offset="100%" stop-color="#C5962B"/>
+    </linearGradient>
+    <filter id="bulbGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Outer Rounded Square with Golden Border -->
+  <rect x="10" y="10" width="180" height="180" rx="42" fill="url(#bgGrad)" stroke="url(#bulbGold)" stroke-width="4"/>
+
+  <!-- Light Bulb Innovation Graphic -->
+  <g transform="translate(100, 95)" filter="url(#bulbGlow)">
+    <!-- Bulb Glass Outline -->
+    <path d="M0 -55 C-32 -55 -45 -25 -25 8 C-18 19 -15 28 -14 36 L14 36 C15 28 18 19 25 8 C45 -25 32 -55 0 -55 Z" fill="url(#bulbGold)" opacity="0.95"/>
+    
+    <!-- Bulb Filament (Arabic Calligraphy Inspired F / ف style) -->
+    <path d="M-10 -15 C-15 -30 0 -40 10 -25 C18 -12 -5 0 0 15" fill="none" stroke="#0E3D28" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="0" cy="-28" r="4" fill="#0E3D28"/>
+
+    <!-- Bulb Base screw threads -->
+    <path d="M-13 42 L13 42 M-10 49 L10 49 M-6 55 L6 55" stroke="url(#bulbGold)" stroke-width="4.5" stroke-linecap="round"/>
+    
+    <!-- Innovation Rays -->
+    <line x1="0" y1="-68" x2="0" y2="-78" stroke="#FFE49E" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="-48" y1="-48" x2="-56" y2="-56" stroke="#FFE49E" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="48" y1="-48" x2="56" y2="-56" stroke="#FFE49E" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="-58" y1="-12" x2="-68" y2="-12" stroke="#FFE49E" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="58" y1="-12" x2="68" y2="-12" stroke="#FFE49E" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+</svg>

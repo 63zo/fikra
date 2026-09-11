@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E5C378"/>
+      <stop offset="50%" stop-color="#C5A059"/>
+      <stop offset="100%" stop-color="#9A7731"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B6B48"/>
+      <stop offset="100%" stop-color="#0F422C"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Emblem Icon -->
+  <g transform="translate(15, 12)" filter="url(#glow)">
+    <!-- Base Shield / Palm Geometric Shape -->
+    <path d="M48 6 C28 6 12 22 12 44 C12 72 48 92 48 92 C48 92 84 72 84 44 C84 22 68 6 48 6 Z" fill="url(#greenGrad)" stroke="url(#goldGrad)" stroke-width="2.5"/>
+    
+    <!-- University Open Book / Knowledge Motif -->
+    <path d="M26 62 C34 54 44 56 48 60 C52 56 62 54 70 62 C62 50 48 50 48 50 C48 50 34 50 26 62 Z" fill="url(#goldGrad)"/>
+    <path d="M28 48 C36 42 44 44 48 48 C52 44 60 42 68 48 C60 38 48 38 48 38 C48 38 36 38 28 48 Z" fill="#FFFFFF" opacity="0.9"/>
+    
+    <!-- Stylized Palm Frond / Rays -->
+    <path d="M48 20 L48 38 M41 24 L48 32 M55 24 L48 32 M36 30 L48 36 M60 30 L48 36" stroke="url(#goldGrad)" stroke-width="2.2" stroke-linecap="round"/>
+    
+    <!-- Central Golden Star -->
+    <circle cx="48" cy="18" r="3.5" fill="url(#goldGrad)"/>
+  </g>
+
+  <!-- Typography: Arabic & English -->
+  <!-- Arabic Text -->
+  <text x="120" y="48" font-family="'Tajawal', 'IBM Plex Sans Arabic', 'Segoe UI', sans-serif" font-size="25" font-weight="800" fill="#14573A" letter-spacing="0">
+    جامعة بيشة
+  </text>
+  <text x="120" y="72" font-family="'Tajawal', 'IBM Plex Sans Arabic', 'Segoe UI', sans-serif" font-size="13.5" font-weight="600" fill="#C5A059">
+    نظام الابتكار والأفكار المؤسسية • فكرة
+  </text>
+  
+  <!-- English Text Subtitle -->
+  <text x="120" y="94" font-family="'Outfit', 'Inter', sans-serif" font-size="12" font-weight="700" fill="#5A6E63" letter-spacing="1.2">
+    UNIVERSITY OF BISHA — FIKRA
+  </text>
+
+  <!-- Divider Line with Gold Diamond -->
+  <line x1="120" y1="78" x2="380" y2="78" stroke="#E2E8E2" stroke-width="1"/>
+</svg>
