@@ -296,6 +296,9 @@ const CommitteePortal = {
       }
 
       State.saveToStorage();
+      if (window.SupabaseService) {
+        window.SupabaseService.upsertIdea(idea);
+      }
       App.closeGlobalModal();
       App.showToast(I18N.t('committeeDecisionRecorded'), 'success');
       CommitteePortal.render();

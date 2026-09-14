@@ -111,6 +111,10 @@ const Auth = {
     State.currentUser = newUser;
     State.saveToStorage();
 
+    if (window.SupabaseService) {
+      window.SupabaseService.upsertUser(newUser);
+    }
+
     return { success: true, user: newUser };
   },
 
@@ -157,6 +161,10 @@ const Auth = {
     delete this.verificationCodeCache[cleanEmail];
     State.saveToStorage();
 
+    if (window.SupabaseService) {
+      window.SupabaseService.upsertUser(user);
+    }
+
     return { success: true };
   },
 
@@ -178,6 +186,11 @@ const Auth = {
     if (match) match.password = newPassword;
 
     State.saveToStorage();
+
+    if (window.SupabaseService) {
+      window.SupabaseService.upsertUser(State.currentUser);
+    }
+
     return { success: true };
   },
 

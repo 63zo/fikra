@@ -70,6 +70,12 @@ const IdeasManager = {
 
     State.saveToStorage();
 
+    // Live Sync to Supabase Cloud
+    if (window.SupabaseService) {
+      window.SupabaseService.upsertIdea(newIdea);
+      window.SupabaseService.upsertUser(currentAuthor);
+    }
+
     return { success: true, idea: newIdea };
   },
 
@@ -97,10 +103,12 @@ const IdeasManager = {
       const author = State.users.find(u => u.id === idea.authorId);
       if (author && author.id !== userId) {
         author.points = (author.points || 0) + 10;
+        if (window.SupabaseService) window.SupabaseService.upsertUser(author);
       }
     }
 
     State.saveToStorage();
+    if (window.SupabaseService) window.SupabaseService.upsertIdea(idea);
     this.refreshFeed();
   },
 
@@ -136,6 +144,10 @@ const IdeasManager = {
     if (userInList) userInList.points = State.currentUser.points;
 
     State.saveToStorage();
+    if (window.SupabaseService) {
+      window.SupabaseService.upsertIdea(idea);
+      window.SupabaseService.upsertUser(State.currentUser);
+    }
     return { success: true, comment: newComment };
   },
 

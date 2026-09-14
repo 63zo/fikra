@@ -54,6 +54,9 @@ const AdminPortal = {
         <button class="admin-tab-btn ${this.activeTab === 'ai' ? 'active' : ''}" onclick="AdminPortal.switchTab('ai')">
           <i class="mdi mdi-robot-confused-outline"></i> ${I18N.t('tabAISettings')}
         </button>
+        <button class="admin-tab-btn ${this.activeTab === 'database' ? 'active' : ''}" onclick="AdminPortal.switchTab('database')">
+          <i class="mdi mdi-database-check-outline"></i> ${I18N.currentLang === 'ar' ? 'قاعدة البيانات (Supabase)' : 'Database (Supabase)'}
+        </button>
       </div>
 
       <div class="admin-tab-content-box mt-4">
@@ -79,8 +82,10 @@ const AdminPortal = {
         return this.renderUsersTab();
       case 'ai':
         return this.renderAITab();
+      case 'database':
+        return this.renderDatabaseTab();
       default:
-        return '';
+        return this.renderDepartmentsTab();
     }
   },
 
@@ -152,12 +157,14 @@ const AdminPortal = {
       const en = document.getElementById('new-dept-en').value.trim();
       if (!ar || !en) return;
 
-      State.departments.push({
+      const newDept = {
         id: 'dept_' + Date.now(),
         nameAr: ar,
         nameEn: en
-      });
+      };
+      State.departments.push(newDept);
       State.saveToStorage();
+      if (window.SupabaseService) window.SupabaseService.upsertDepartment(newDept);
       App.closeGlobalModal();
       App.showToast(I18N.t('itemAddedSuccess'), 'success');
       this.render();
@@ -173,6 +180,7 @@ const AdminPortal = {
     }
     State.departments = State.departments.filter(d => d.id !== id);
     State.saveToStorage();
+    if (window.SupabaseService) window.SupabaseService.deleteDepartment(id);
     App.showToast(I18N.t('itemDeletedSuccess'), 'success');
     this.render();
   },
@@ -245,12 +253,14 @@ const AdminPortal = {
       const en = document.getElementById('new-job-en').value.trim();
       if (!ar || !en) return;
 
-      State.jobTitles.push({
+      const newJob = {
         id: 'job_' + Date.now(),
         nameAr: ar,
         nameEn: en
-      });
+      };
+      State.jobTitles.push(newJob);
       State.saveToStorage();
+      if (window.SupabaseService) window.SupabaseService.upsertJobTitle(newJob);
       App.closeGlobalModal();
       App.showToast(I18N.t('itemAddedSuccess'), 'success');
       this.render();
@@ -263,6 +273,7 @@ const AdminPortal = {
     if (State.jobTitles.length <= 1) return;
     State.jobTitles = State.jobTitles.filter(j => j.id !== id);
     State.saveToStorage();
+    if (window.SupabaseService) window.SupabaseService.deleteJobTitle(id);
     App.showToast(I18N.t('itemDeletedSuccess'), 'success');
     this.render();
   },
@@ -335,13 +346,15 @@ const AdminPortal = {
       const en = document.getElementById('new-cat-en').value.trim();
       if (!ar || !en) return;
 
-      State.categories.push({
+      const newCat = {
         id: 'cat_' + Date.now(),
         nameAr: ar,
         nameEn: en,
         icon: '🌟'
-      });
+      };
+      State.categories.push(newCat);
       State.saveToStorage();
+      if (window.SupabaseService) window.SupabaseService.upsertCategory(newCat);
       App.closeGlobalModal();
       App.showToast(I18N.t('itemAddedSuccess'), 'success');
       this.render();
@@ -354,6 +367,7 @@ const AdminPortal = {
     if (State.categories.length <= 1) return;
     State.categories = State.categories.filter(c => c.id !== id);
     State.saveToStorage();
+    if (window.SupabaseService) window.SupabaseService.deleteCategory(id);
     App.showToast(I18N.t('itemDeletedSuccess'), 'success');
     this.render();
   },
@@ -454,6 +468,60 @@ const AdminPortal = {
         </form>
       </div>
     `;
+  },
+
+  // 6. Database Tab (Supabase Cloud Sync)
+  renderDatabaseTab() {
+    const isConnected = window.SupabaseService && window.SupabaseService.isConnected;
+    const url = window.SupabaseService ? window.SupabaseService.config.url : '';
+
+    return `
+      <div class="ai-settings-card">
+        <div class="d-flex items-center justify-between mb-3">
+          <h4 class="font-bold text-primary mb-0">
+            <i class="mdi mdi-database-outline"></i> ${I18N.currentLang === 'ar' ? 'سحابة قاعدة البيانات (Supabase Cloud)' : 'Cloud Database (Supabase)'}
+          </h4>
+          <span class="badge ${isConnected ? 'badge-approved' : 'badge-rejected'}">
+            <i class="mdi ${isConnected ? 'mdi-check-circle' : 'mdi-alert-circle'}"></i> 
+            ${isConnected ? (I18N.currentLang === 'ar' ? 'متصل بقاعدة البيانات' : 'Connected to Supabase') : (I18N.currentLang === 'ar' ? 'غير متصل (يعمل محلياً)' : 'Offline / Local')}
+          </span>
+        </div>
+
+        <p class="text-muted text-sm mb-4">
+          ${I18N.currentLang === 'ar' 
+            ? 'تتيح قاعدة بيانات Supabase مشاركة الأفكار والتصويت والتعليقات فورياً وبشكل حي بين كافة أجهزة الموظفين والمحكمين حول العالم.' 
+            : 'Supabase PostgreSQL cloud database synchronizes ideas, votes, comments, and evaluations in real-time across all devices.'}
+        </p>
+
+        <div class="form-group mb-3">
+          <label class="form-label font-bold">${I18N.currentLang === 'ar' ? 'رابط المشروع (Project URL):' : 'Project URL:'}</label>
+          <input type="text" class="form-control" value="${url}" readonly />
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="button" class="btn btn-primary" onclick="AdminPortal.pushAllToSupabase()">
+            <i class="mdi mdi-cloud-upload"></i> ${I18N.currentLang === 'ar' ? 'رفع ومزامنة البيانات الحالية إلى Supabase' : 'Push & Seed All Data to Supabase'}
+          </button>
+          <button type="button" class="btn btn-outline" onclick="AdminPortal.pullFromSupabase()">
+            <i class="mdi mdi-cloud-download"></i> ${I18N.currentLang === 'ar' ? 'سحب التحديثات من Supabase' : 'Fetch Latest from Supabase'}
+          </button>
+        </div>
+      </div>
+    `;
+  },
+
+  async pushAllToSupabase() {
+    if (!window.SupabaseService) return;
+    App.showToast(I18N.currentLang === 'ar' ? 'جارٍ رفع البيانات إلى السحابة...' : 'Uploading data to Supabase...', 'info');
+    await window.SupabaseService.seedRemoteDatabase();
+    App.showToast(I18N.currentLang === 'ar' ? 'تمت مزامنة البيانات مع Supabase بنجاح! 🚀' : 'Data synced with Supabase successfully! 🚀', 'success');
+  },
+
+  async pullFromSupabase() {
+    if (!window.SupabaseService) return;
+    App.showToast(I18N.currentLang === 'ar' ? 'جارٍ جلب البيانات...' : 'Fetching data from Supabase...', 'info');
+    await window.SupabaseService.syncAllFromRemote();
+    App.showToast(I18N.currentLang === 'ar' ? 'تم تحديث البيانات بنجاح!' : 'Data refreshed from Supabase!', 'success');
   },
 
   confirmResetSeedData() {

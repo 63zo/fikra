@@ -32,6 +32,11 @@ const State = {
       this.seedInitialData();
     }
     this.checkSession();
+
+    // Initialize Supabase live cloud synchronization
+    if (window.SupabaseService) {
+      window.SupabaseService.init();
+    }
   },
 
   loadFromStorage() {
