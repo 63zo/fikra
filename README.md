@@ -51,42 +51,6 @@
 
 ---
 
-## 🚀 التشغيل المحلي (Run Locally)
-
-التطبيق مبني بنمط Single Page Web Application بدون الحاجة لأي تثبيت معقد:
-- افتح ملف `index.html` في أي متصفح حديث (Google Chrome, Microsoft Edge, Safari, Firefox).
-- أو شغّل خادم محلي:
-```bash
-# باستخدام Python
-python -m http.server 8080
-
-# أو باستخدام Node.js npx serve
-npx serve .
-```
-
----
-
-## 📦 رفع الكود إلى GitHub ونشره على GitHub Pages
-
-### 1. تهيئة مستودع Git ورفع الكود:
-```bash
-git init
-git add .
-git commit -m "Initial commit: Fikra - University of Bisha Idea Management System"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/fikra-ub.git
-git push -u origin main
-```
-
-### 2. التفعيل على GitHub Pages (بنقرة واحدة مجاناً):
-1. اذهب إلى إعدادات المستودع على GitHub: `Settings` ➔ `Pages`.
-2. في قسم **Build and deployment**:
-   - **Source**: اختر `Deploy from a branch`.
-   - **Branch**: اختر `main` والمجلد `/ (root)`.
-3. اضغط `Save`، وخلال دقيقة سيصبح الموقع متاحاً على الرابط:
-   `https://YOUR_USERNAME.github.io/fikra-ub/`
-
----
 
 ## 📄 الترخيص (License)
 جامعة بيشة — جميع الحقوق محفوظة © 2026.
