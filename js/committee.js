@@ -16,10 +16,7 @@ const CommitteePortal = {
         <div class="access-denied-box">
           <i class="mdi mdi-shield-lock-outline"></i>
           <h3>${I18N.currentLang === 'ar' ? 'هذه الصفحة مخصصة لأعضاء لجنة التحكيم والتقييم' : 'This portal is restricted to Committee Evaluators'}</h3>
-          <p>${I18N.currentLang === 'ar' ? 'يمكنك التبديل إلى حساب المحكم للتجربة من زر الدخول السريع.' : 'You can switch to the Committee account using the quick demo bar.'}</p>
-          <button class="btn btn-primary" onclick="Auth.loginAsRole('committee'); App.render();">
-            <i class="mdi mdi-account-switch"></i> ${I18N.currentLang === 'ar' ? 'دخول بحساب المحكم (د. محمد القرني)' : 'Sign in as Committee Member'}
-          </button>
+          <p>${I18N.currentLang === 'ar' ? 'عفواً، لا تملك الصلاحيات الكافية للوصول إلى بوابة التحكيم. يرجى مراجعة مدير النظام.' : 'You do not have the required permissions to access this portal. Please contact the administrator.'}</p>
         </div>
       `;
       return;

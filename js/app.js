@@ -207,22 +207,6 @@ const App = {
             </div>
           </div>
 
-          <!-- Quick Demo Switcher Bar -->
-          <div class="demo-quick-bar">
-            <span class="demo-label">${I18N.t('demoLoginFast')}</span>
-            <div class="demo-buttons-group">
-              <button class="demo-role-btn emp" onclick="Auth.loginAsRole('employee'); App.navigate('home');">
-                <i class="mdi mdi-account"></i> موظف (د. سارة)
-              </button>
-              <button class="demo-role-btn comm" onclick="Auth.loginAsRole('committee'); App.navigate('home');">
-                <i class="mdi mdi-scale-balance"></i> محكم (د. محمد)
-              </button>
-              <button class="demo-role-btn adm" onclick="Auth.loginAsRole('admin'); App.navigate('home');">
-                <i class="mdi mdi-shield-account"></i> مدير نظام (أ. خالد)
-              </button>
-            </div>
-          </div>
-
           <div class="auth-card-main-content">
             ${this.currentView === 'register' ? this.renderRegisterForm() 
               : this.currentView === 'forgot_password' ? this.renderForgotPasswordForm() 

@@ -15,10 +15,7 @@ const AdminPortal = {
         <div class="access-denied-box">
           <i class="mdi mdi-lock-alert-outline"></i>
           <h3>${I18N.currentLang === 'ar' ? 'هذه الصفحة مخصصة لمدير النظام فقط' : 'This page is restricted to System Administrators'}</h3>
-          <p>${I18N.currentLang === 'ar' ? 'يمكنك التبديل إلى حساب مدير النظام للتجربة من زر الدخول السريع.' : 'Switch to the Admin account using the quick demo bar.'}</p>
-          <button class="btn btn-primary" onclick="Auth.loginAsRole('admin'); App.render();">
-            <i class="mdi mdi-account-shield"></i> ${I18N.currentLang === 'ar' ? 'دخول كمدير نظام (أ. خالد الحازمي)' : 'Sign in as Admin'}
-          </button>
+          <p>${I18N.currentLang === 'ar' ? 'عفواً، لا تملك الصلاحيات الإدارية الكافية للوصول إلى هذه الصفحة.' : 'You do not have administrative permissions to access this page.'}</p>
         </div>
       `;
       return;
