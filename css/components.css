@@ -191,13 +191,42 @@
 }
 
 .tag-chip {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
   background-color: var(--bg-subtle);
   color: var(--text-secondary);
-  padding: 0.2rem 0.6rem;
+  padding: 0.25rem 0.65rem;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  line-height: 1.2;
+}
+
+.tag-chip i {
+  color: var(--color-gold);
+  font-size: 0.85rem;
+}
+
+.tag-chip.clickable-tag:hover {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(20, 87, 58, 0.15);
+}
+
+.tag-chip.clickable-tag:hover i {
+  color: var(--color-primary);
+}
+
+.tag-chip.clickable-tag:active {
+  transform: scale(0.94);
 }
 
 .committee-approved-note {

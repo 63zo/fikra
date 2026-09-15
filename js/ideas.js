@@ -155,6 +155,38 @@ const IdeasManager = {
     return { success: true, comment: newComment };
   },
 
+  // Filter feed by specific tag when user clicks a hashtag
+  filterByTag(rawTag) {
+    if (!rawTag) return;
+    const tag = String(rawTag).replace(/^#/, '').trim();
+    this.activeFilter.search = tag;
+
+    if (window.App.currentView !== 'home') {
+      window.App.navigate('home');
+    }
+
+    if (window.App.closeGlobalModal) {
+      window.App.closeGlobalModal();
+    }
+
+    const searchInput = document.getElementById('feed-search-input');
+    if (searchInput) {
+      searchInput.value = '#' + tag;
+    }
+
+    this.refreshFeed();
+
+    const toolbar = document.querySelector('.ideas-toolbar-card');
+    if (toolbar) {
+      toolbar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    window.App.showToast(
+      I18N.currentLang === 'ar' ? `🔍 تم تصفية الأفكار بالوسم: #${tag}` : `🔍 Filtered by tag: #${tag}`,
+      'info'
+    );
+  },
+
   // Get filtered and sorted ideas
   getFilteredIdeas() {
     let list = [...State.ideas];
@@ -174,10 +206,18 @@ const IdeasManager = {
       list = list.filter(i => i.categoryId === this.activeFilter.category);
     }
 
-    // Search Query
+    // Search Query & Tag Match
     if (this.activeFilter.search && this.activeFilter.search.trim()) {
-      const q = AIEngine.normalizeArabic(this.activeFilter.search);
+      const cleanSearch = this.activeFilter.search.trim().replace(/^#/, '');
+      const q = AIEngine.normalizeArabic(cleanSearch);
       list = list.filter(i => {
+        // Tag Match
+        const tagMatch = (i.tags || []).some(t => {
+          const normTag = AIEngine.normalizeArabic(String(t).replace(/^#/, ''));
+          return normTag.includes(q) || q.includes(normTag);
+        });
+        if (tagMatch) return true;
+
         const fullDoc = AIEngine.normalizeArabic(
           `${i.titleAr} ${i.titleEn} ${i.descAr} ${i.descEn} ${i.authorName} ${(i.tags || []).join(' ')}`
         );
@@ -286,9 +326,16 @@ const IdeasManager = {
             </div>
           ` : ''}
 
-          <!-- Tags -->
+          <!-- Interactive Tags -->
           <div class="idea-tags">
-            ${(idea.tags || []).map(tag => `<span class="tag-chip">#${tag.replace('#', '')}</span>`).join('')}
+            ${(idea.tags || []).map(tag => {
+              const cleanTag = String(tag).replace(/^#/, '').trim();
+              return `
+                <button type="button" class="tag-chip clickable-tag" onclick="event.stopPropagation(); IdeasManager.filterByTag('${cleanTag.replace(/'/g, "\\'")}')" title="${I18N.currentLang === 'ar' ? 'انقر لعرض الأفكار الموسومة بـ #' + cleanTag : 'Click to filter by #' + cleanTag}">
+                  <i class="mdi mdi-pound"></i><span>${cleanTag}</span>
+                </button>
+              `;
+            }).join('')}
           </div>
 
           ${idea.evaluation && idea.evaluation.decision === 'approved' ? `
@@ -385,8 +432,15 @@ const IdeasManager = {
 
         <div class="detail-section">
           <h4 class="section-heading"><i class="mdi mdi-tag-multiple-outline"></i> ${I18N.t('aiAutoTags')}</h4>
-          <div class="tag-list">
-            ${(idea.tags || []).map(t => `<span class="tag-chip">#${t}</span>`).join(' ')}
+          <div class="idea-tags">
+            ${(idea.tags || []).map(t => {
+              const cleanTag = String(t).replace(/^#/, '').trim();
+              return `
+                <button type="button" class="tag-chip clickable-tag" onclick="IdeasManager.filterByTag('${cleanTag.replace(/'/g, "\\'")}')" title="${I18N.currentLang === 'ar' ? 'عرض الأفكار بهذا الوسم #' + cleanTag : 'Filter by #' + cleanTag}">
+                  <i class="mdi mdi-pound"></i><span>${cleanTag}</span>
+                </button>
+              `;
+            }).join(' ')}
           </div>
         </div>
 
