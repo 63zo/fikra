@@ -70,17 +70,21 @@ const IdeasManager = {
 
     State.saveToStorage();
 
-    // Live Sync to Supabase Cloud
+    // Live Sync to Supabase Cloud Database
     if (window.SupabaseService) {
-      window.SupabaseService.upsertIdea(newIdea);
-      window.SupabaseService.upsertUser(currentAuthor);
+      try {
+        await window.SupabaseService.upsertIdea(newIdea);
+        await window.SupabaseService.upsertUser(currentAuthor);
+      } catch (err) {
+        console.warn('Cloud sync error on submit:', err);
+      }
     }
 
     return { success: true, idea: newIdea };
   },
 
   // Upvote / Un-upvote
-  toggleVote(ideaId) {
+  async toggleVote(ideaId) {
     if (!Auth.isLoggedIn()) {
       window.App.showToast(I18N.t('invalidCredentials'), 'warning');
       return;
@@ -108,12 +112,12 @@ const IdeasManager = {
     }
 
     State.saveToStorage();
-    if (window.SupabaseService) window.SupabaseService.upsertIdea(idea);
     this.refreshFeed();
+    if (window.SupabaseService) await window.SupabaseService.upsertIdea(idea);
   },
 
   // Add Comment
-  addComment(ideaId, text) {
+  async addComment(ideaId, text) {
     if (!Auth.isLoggedIn()) {
       return { success: false, message: I18N.t('invalidCredentials') };
     }
@@ -145,8 +149,8 @@ const IdeasManager = {
 
     State.saveToStorage();
     if (window.SupabaseService) {
-      window.SupabaseService.upsertIdea(idea);
-      window.SupabaseService.upsertUser(State.currentUser);
+      await window.SupabaseService.upsertIdea(idea);
+      await window.SupabaseService.upsertUser(State.currentUser);
     }
     return { success: true, comment: newComment };
   },

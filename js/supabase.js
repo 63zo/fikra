@@ -1,5 +1,5 @@
 /**
- * Fikra (فكرة) - Supabase Cloud Database Client & Realtime Sync
+ * Fikra (فكرة) - Supabase Cloud Database Client & Realtime Multi-Device Sync
  * Connects directly to Supabase PostgreSQL database for live sync across all devices.
  */
 
@@ -13,10 +13,14 @@ const SupabaseService = {
   client: null,
   isConnected: false,
   isSyncing: false,
+  lastSyncTime: null,
+  realtimeChannel: null,
+  statusMessage: '',
 
   init() {
     if (!window.supabase) {
       console.warn('Supabase JS library not loaded.');
+      this.updateStatus('offline', 'مكتبة Supabase غير متوفرة');
       return;
     }
 
@@ -28,14 +32,35 @@ const SupabaseService = {
         }
       });
       this.isConnected = true;
+      this.updateStatus('connected', 'متصل بالسحابة');
       console.log('✅ Supabase Client initialized successfully.');
 
       // Fetch remote data and setup real-time listeners
-      this.syncAllFromRemote();
+      this.syncAllFromRemote(true);
       this.setupRealtimeListeners();
     } catch (e) {
       console.error('Failed to initialize Supabase client:', e);
       this.isConnected = false;
+      this.updateStatus('error', 'تعذر الاتصال بالسحابة');
+    }
+  },
+
+  updateStatus(status, message) {
+    this.statusMessage = message;
+    const badge = document.getElementById('cloud-sync-status-badge');
+    if (badge) {
+      if (status === 'connected') {
+        badge.className = 'cloud-sync-pill connected';
+        badge.innerHTML = `<span class="pulse-dot"></span><span>${I18N.currentLang === 'ar' ? 'سحابي متصل' : 'Cloud Synced'}</span>`;
+        badge.title = `Supabase PostgreSQL Live Sync Active (${new Date().toLocaleTimeString()})`;
+      } else if (status === 'syncing') {
+        badge.className = 'cloud-sync-pill syncing';
+        badge.innerHTML = `<i class="mdi mdi-loading mdi-spin"></i><span>${I18N.currentLang === 'ar' ? 'جارٍ المزامنة...' : 'Syncing...'}</span>`;
+      } else {
+        badge.className = 'cloud-sync-pill error';
+        badge.innerHTML = `<i class="mdi mdi-cloud-alert"></i><span>${I18N.currentLang === 'ar' ? 'يعمل محلياً' : 'Offline / Local'}</span>`;
+        badge.title = message || 'Offline';
+      }
     }
   },
 
@@ -58,12 +83,12 @@ const SupabaseService = {
       author_dept: idea.authorDept || '',
       author_avatar: idea.authorAvatar || '',
       status: idea.status || 'submitted',
-      tags: idea.tags || [],
-      ai_score: idea.aiScore || 80,
+      tags: Array.isArray(idea.tags) ? idea.tags : [],
+      ai_score: typeof idea.aiScore === 'number' ? idea.aiScore : 80,
       ai_summary: idea.aiSummary || '',
-      votes: idea.votes || [],
-      downvotes: idea.downvotes || [],
-      comments: idea.comments || [],
+      votes: Array.isArray(idea.votes) ? idea.votes : [],
+      downvotes: Array.isArray(idea.downvotes) ? idea.downvotes : [],
+      comments: Array.isArray(idea.comments) ? idea.comments : [],
       evaluation: idea.evaluation || null,
       created_at: idea.createdAt || new Date().toISOString()
     };
@@ -86,15 +111,15 @@ const SupabaseService = {
       authorName: row.author_name,
       authorDept: row.author_dept,
       authorAvatar: row.author_avatar,
-      status: row.status,
+      status: row.status || 'submitted',
       tags: Array.isArray(row.tags) ? row.tags : [],
-      aiScore: row.ai_score,
+      aiScore: row.ai_score || 80,
       aiSummary: row.ai_summary,
       votes: Array.isArray(row.votes) ? row.votes : [],
       downvotes: Array.isArray(row.downvotes) ? row.downvotes : [],
       comments: Array.isArray(row.comments) ? row.comments : [],
       evaluation: row.evaluation,
-      createdAt: row.created_at
+      createdAt: row.created_at || new Date().toISOString()
     };
   },
 
@@ -109,8 +134,8 @@ const SupabaseService = {
       job_title_id: u.jobTitleId,
       role: u.role || 'employee',
       points: u.points || 100,
-      badges: u.badges || ['new_innovator'],
-      avatar: u.avatar
+      badges: Array.isArray(u.badges) ? u.badges : ['new_innovator'],
+      avatar: u.avatar || ''
     };
   },
 
@@ -123,17 +148,18 @@ const SupabaseService = {
       password: row.password,
       departmentId: row.department_id,
       jobTitleId: row.job_title_id,
-      role: row.role,
-      points: row.points,
+      role: row.role || 'employee',
+      points: row.points || 100,
       badges: Array.isArray(row.badges) ? row.badges : ['new_innovator'],
-      avatar: row.avatar
+      avatar: row.avatar || ''
     };
   },
 
   // Sync entire dataset from Supabase
-  async syncAllFromRemote() {
-    if (!this.client || this.isSyncing) return;
+  async syncAllFromRemote(silent = false) {
+    if (!this.client || this.isSyncing) return false;
     this.isSyncing = true;
+    this.updateStatus('syncing', 'جارٍ مزامنة البيانات...');
 
     try {
       // 1. Sync Departments
@@ -157,7 +183,13 @@ const SupabaseService = {
       // 4. Sync Users
       const { data: users, error: usersErr } = await this.client.from('users').select('*');
       if (!usersErr && users && users.length > 0) {
+        // Merge or replace users
         State.users = users.map(u => this.mapDbToUser(u));
+        // Also refresh active user session if exists
+        if (State.currentUser) {
+          const matched = State.users.find(u => u.id === State.currentUser.id);
+          if (matched) State.currentUser = matched;
+        }
       }
 
       // 5. Sync Ideas
@@ -166,7 +198,7 @@ const SupabaseService = {
         State.ideas = ideas.map(i => this.mapDbToIdea(i));
       }
 
-      // If remote has no data yet, auto-seed default dataset to Supabase!
+      // Auto-seed if remote database tables exist but are completely empty
       if ((!depts || depts.length === 0) && State.departments.length > 0) {
         console.log('Pushing initial seed dataset to Supabase...');
         await this.seedRemoteDatabase();
@@ -174,12 +206,27 @@ const SupabaseService = {
 
       // Save synced state locally & refresh active view
       State.saveToStorage();
+      this.lastSyncTime = new Date();
+      this.isConnected = true;
+      this.updateStatus('connected', 'متصل بالسحابة');
+
+      // Refresh view if not currently submitting
       if (window.App && typeof window.App.render === 'function') {
-        window.App.render();
+        if (window.App.currentView === 'home' && window.IdeasManager) {
+          window.IdeasManager.refreshFeed();
+        } else if (window.App.currentView === 'committee' && window.CommitteePortal) {
+          window.CommitteePortal.render();
+        } else if (window.App.currentView === 'dashboard' && window.AnalyticsDashboard) {
+          window.AnalyticsDashboard.render();
+        }
       }
+
       console.log('✅ Supabase sync complete.');
+      return true;
     } catch (err) {
       console.warn('Supabase sync warning (using offline/local cache):', err);
+      this.updateStatus('error', 'وضع عدم الاتصال');
+      return false;
     } finally {
       this.isSyncing = false;
     }
@@ -187,55 +234,82 @@ const SupabaseService = {
 
   // Seed remote database with default initial data
   async seedRemoteDatabase() {
-    if (!this.client) return;
+    if (!this.client) return false;
     try {
+      this.updateStatus('syncing', 'جارٍ رفع البيانات الأولية...');
+
       // Seed departments
-      const deptsDb = State.departments.map(d => ({ id: d.id, name_ar: d.nameAr, name_en: d.nameEn }));
-      await this.client.from('departments').upsert(deptsDb);
+      if (State.departments.length > 0) {
+        const deptsDb = State.departments.map(d => ({ id: d.id, name_ar: d.nameAr, name_en: d.nameEn, code: d.code || '' }));
+        await this.client.from('departments').upsert(deptsDb);
+      }
 
       // Seed job titles
-      const jobsDb = State.jobTitles.map(j => ({ id: j.id, title_ar: j.titleAr, title_en: j.titleEn }));
-      await this.client.from('job_titles').upsert(jobsDb);
+      if (State.jobTitles.length > 0) {
+        const jobsDb = State.jobTitles.map(j => ({ id: j.id, title_ar: j.titleAr, title_en: j.titleEn }));
+        await this.client.from('job_titles').upsert(jobsDb);
+      }
 
       // Seed categories
-      const catsDb = State.categories.map(c => ({ id: c.id, name_ar: c.nameAr, name_en: c.nameEn, icon: c.icon, color: c.color }));
-      await this.client.from('categories').upsert(catsDb);
+      if (State.categories.length > 0) {
+        const catsDb = State.categories.map(c => ({ id: c.id, name_ar: c.nameAr, name_en: c.nameEn, icon: c.icon || '💡', color: c.color || '#14573A' }));
+        await this.client.from('categories').upsert(catsDb);
+      }
 
       // Seed users
-      const usersDb = State.users.map(u => this.mapUserToDb(u));
-      await this.client.from('users').upsert(usersDb);
+      if (State.users.length > 0) {
+        const usersDb = State.users.map(u => this.mapUserToDb(u));
+        await this.client.from('users').upsert(usersDb);
+      }
 
       // Seed ideas
-      const ideasDb = State.ideas.map(i => this.mapIdeaToDb(i));
-      await this.client.from('ideas').upsert(ideasDb);
+      if (State.ideas.length > 0) {
+        const ideasDb = State.ideas.map(i => this.mapIdeaToDb(i));
+        await this.client.from('ideas').upsert(ideasDb);
+      }
 
+      this.isConnected = true;
+      this.updateStatus('connected', 'تم رفع البيانات بنجاح');
       console.log('🚀 Initial seed successfully uploaded to Supabase!');
+      return true;
     } catch (e) {
-      console.warn('Seeding to Supabase encountered an error (check if SQL tables are created):', e);
+      console.warn('Seeding to Supabase encountered an error:', e);
+      this.updateStatus('error', 'فشل رفع البيانات');
+      return false;
     }
   },
 
   // Save or update an idea in Supabase
   async upsertIdea(idea) {
-    if (!this.client) return;
+    if (!this.client) return false;
     try {
       const dbObj = this.mapIdeaToDb(idea);
       const { error } = await this.client.from('ideas').upsert(dbObj);
-      if (error) console.warn('Supabase upsertIdea error:', error);
+      if (error) {
+        console.warn('Supabase upsertIdea error:', error);
+        return false;
+      }
+      return true;
     } catch (e) {
       console.warn('Supabase upsertIdea exception:', e);
+      return false;
     }
   },
 
   // Save or update a user in Supabase
   async upsertUser(user) {
-    if (!this.client) return;
+    if (!this.client) return false;
     try {
       const dbObj = this.mapUserToDb(user);
       const { error } = await this.client.from('users').upsert(dbObj);
-      if (error) console.warn('Supabase upsertUser error:', error);
+      if (error) {
+        console.warn('Supabase upsertUser error:', error);
+        return false;
+      }
+      return true;
     } catch (e) {
       console.warn('Supabase upsertUser exception:', e);
+      return false;
     }
   },
 
@@ -243,7 +317,7 @@ const SupabaseService = {
   async upsertDepartment(dept) {
     if (!this.client) return;
     try {
-      await this.client.from('departments').upsert({ id: dept.id, name_ar: dept.nameAr, name_en: dept.nameEn });
+      await this.client.from('departments').upsert({ id: dept.id, name_ar: dept.nameAr, name_en: dept.nameEn, code: dept.code || '' });
     } catch (e) {
       console.warn(e);
     }
@@ -304,16 +378,31 @@ const SupabaseService = {
     if (!this.client) return;
 
     try {
-      this.client
-        .channel('public:ideas')
+      if (this.realtimeChannel) {
+        this.client.removeChannel(this.realtimeChannel);
+      }
+
+      this.realtimeChannel = this.client
+        .channel('public:fikra_live_sync')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'ideas' }, payload => {
           console.log('⚡ Realtime Idea Update from Supabase:', payload);
           if (payload.eventType === 'INSERT') {
             const newIdea = this.mapDbToIdea(payload.new);
-            if (!State.ideas.some(i => i.id === newIdea.id)) {
+            const exists = State.ideas.some(i => i.id === newIdea.id);
+            if (!exists) {
               State.ideas.unshift(newIdea);
               State.saveToStorage();
-              if (window.App && typeof window.App.render === 'function') window.App.render();
+              if (window.App) {
+                window.App.showToast(
+                  I18N.currentLang === 'ar' ? `💡 فكرة جديدة: "${newIdea.titleAr}"` : `💡 New Idea: "${newIdea.titleEn || newIdea.titleAr}"`,
+                  'info'
+                );
+                if (window.App.currentView === 'home' && window.IdeasManager) {
+                  window.IdeasManager.refreshFeed();
+                } else if (window.App.currentView === 'committee' && window.CommitteePortal) {
+                  window.CommitteePortal.render();
+                }
+              }
             }
           } else if (payload.eventType === 'UPDATE') {
             const updatedIdea = this.mapDbToIdea(payload.new);
@@ -321,17 +410,44 @@ const SupabaseService = {
             if (idx > -1) {
               State.ideas[idx] = updatedIdea;
               State.saveToStorage();
-              if (window.App && typeof window.App.render === 'function') window.App.render();
+              if (window.App && window.App.currentView === 'home' && window.IdeasManager) {
+                window.IdeasManager.refreshFeed();
+              } else if (window.App && window.App.currentView === 'committee' && window.CommitteePortal) {
+                window.CommitteePortal.render();
+              }
             }
           } else if (payload.eventType === 'DELETE') {
             State.ideas = State.ideas.filter(i => i.id !== payload.old.id);
             State.saveToStorage();
-            if (window.App && typeof window.App.render === 'function') window.App.render();
+            if (window.App && window.App.currentView === 'home' && window.IdeasManager) {
+              window.IdeasManager.refreshFeed();
+            }
           }
         })
-        .subscribe();
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+          console.log('⚡ Realtime User Update from Supabase:', payload);
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const updatedUser = this.mapDbToUser(payload.new);
+            const idx = State.users.findIndex(u => u.id === updatedUser.id);
+            if (idx > -1) {
+              State.users[idx] = updatedUser;
+            } else {
+              State.users.push(updatedUser);
+            }
+            if (State.currentUser && State.currentUser.id === updatedUser.id) {
+              State.currentUser = updatedUser;
+            }
+            State.saveToStorage();
+          }
+        })
+        .subscribe((status) => {
+          console.log('Supabase Realtime Channel Status:', status);
+          if (status === 'SUBSCRIBED') {
+            this.updateStatus('connected', 'متصل بالسحابة (مزامنة حيّة)');
+          }
+        });
     } catch (e) {
-      console.warn('Realtime subscription not supported or table missing:', e);
+      console.warn('Realtime subscription error:', e);
     }
   }
 };

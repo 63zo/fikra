@@ -52,5 +52,16 @@
 ---
 
 
+## 📚 التوثيق الفني والأدلة التشغيلية (Documentation Suite)
+
+تتضمن المنصة حزمة متكاملة من 5 وثائق فنية وتشغيلية مفصلة في مجلد [`docs/`](file:///c:/Users/ezzoa/OneDrive/Documents/Desktop/Projects/bsha/docs/README.md):
+1. **[دليل المستخدم (User Manual)](file:///c:/Users/ezzoa/OneDrive/Documents/Desktop/Projects/bsha/docs/01_USER_MANUAL.md)** — دليل استخدام شامل لكافة أدوار الموظف والمحكم والمبتكر.
+2. **[دليل إدارة النظام (System Administration Guide)](file:///c:/Users/ezzoa/OneDrive/Documents/Desktop/Projects/bsha/docs/02_SYSTEM_ADMINISTRATION_GUIDE.md)** — دليل تهيئة الهيكل المؤسسي، إدارة الصلاحيات، وإعدادات الذكاء الاصطناعي وقاعدة البيانات.
+3. **[وثيقة معمارية البرمجيات (Software Architecture Document - SAD)](file:///c:/Users/ezzoa/OneDrive/Documents/Desktop/Projects/bsha/docs/03_SOFTWARE_ARCHITECTURE_DOCUMENT.md)** — الوثيقة الهندسية للبنية المعمارية، محرك معالجة اللغات الطبيعية، وتدفق البيانات.
+4. **[دليل واجهات برمجة التطبيقات والتكامل (API & Integration Documentation)](file:///c:/Users/ezzoa/OneDrive/Documents/Desktop/Projects/bsha/docs/04_API_AND_INTEGRATION_DOCUMENTATION.md)** — توثيق كامل لنقاط نهاية REST API، مقابس WebSockets، والتكامل مع Gemini و Web Speech.
+5. **[وثيقة تصميم قاعدة البيانات وقاموس البيانات (Database Design Document)](file:///c:/Users/ezzoa/OneDrive/Documents/Desktop/Projects/bsha/docs/05_DATABASE_DESIGN_DOCUMENT.md)** — مخطط العلاقات الكيانية (ERD)، قواميس البيانات، ونصوص إنشاء جداول PostgreSQL.
+
+---
+
 ## 📄 الترخيص (License)
 جامعة بيشة — جميع الحقوق محفوظة © 2026.

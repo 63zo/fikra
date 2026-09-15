@@ -13,9 +13,14 @@ const AdminPortal = {
     if (!Auth.isAdmin()) {
       container.innerHTML = `
         <div class="access-denied-box">
-          <i class="mdi mdi-lock-alert-outline"></i>
-          <h3>${I18N.currentLang === 'ar' ? 'هذه الصفحة مخصصة لمدير النظام فقط' : 'This page is restricted to System Administrators'}</h3>
-          <p>${I18N.currentLang === 'ar' ? 'عفواً، لا تملك الصلاحيات الإدارية الكافية للوصول إلى هذه الصفحة.' : 'You do not have administrative permissions to access this page.'}</p>
+          <div class="access-denied-icon"><i class="mdi mdi-shield-lock-outline"></i></div>
+          <h3>${I18N.currentLang === 'ar' ? 'هذه الصفحة مخصصة لمدير النظام (Admin)' : 'This page is restricted to System Administrators'}</h3>
+          <p>${I18N.currentLang === 'ar' ? 'أنت مسجل حالياً بحساب غير إداري. يمكنك التبديل فوراً لحساب المدير بالنقر على الزر أدناه:' : 'You are currently logged in with a standard account. You can switch to the Administrator role below:'}</p>
+          <div class="mt-4">
+            <button class="btn btn-primary btn-lg" onclick="App.switchDemoRole('admin')">
+              <i class="mdi mdi-shield-crown"></i> ${I18N.currentLang === 'ar' ? 'التبديل إلى حساب مدير النظام (Admin)' : 'Switch to Admin Account'}
+            </button>
+          </div>
         </div>
       `;
       return;
@@ -474,34 +479,83 @@ const AdminPortal = {
 
     return `
       <div class="ai-settings-card">
-        <div class="d-flex items-center justify-between mb-3">
+        <div class="d-flex items-center justify-between mb-3 flex-wrap gap-2">
           <h4 class="font-bold text-primary mb-0">
-            <i class="mdi mdi-database-outline"></i> ${I18N.currentLang === 'ar' ? 'سحابة قاعدة البيانات (Supabase Cloud)' : 'Cloud Database (Supabase)'}
+            <i class="mdi mdi-database-outline"></i> ${I18N.currentLang === 'ar' ? 'سحابة قاعدة البيانات (Supabase Cloud PostgreSQL)' : 'Cloud Database (Supabase PostgreSQL)'}
           </h4>
-          <span class="badge ${isConnected ? 'badge-approved' : 'badge-rejected'}">
-            <i class="mdi ${isConnected ? 'mdi-check-circle' : 'mdi-alert-circle'}"></i> 
-            ${isConnected ? (I18N.currentLang === 'ar' ? 'متصل بقاعدة البيانات' : 'Connected to Supabase') : (I18N.currentLang === 'ar' ? 'غير متصل (يعمل محلياً)' : 'Offline / Local')}
+          <span class="fikra-badge ${isConnected ? 'badge-approved' : 'badge-rejected'}">
+            <i class="mdi ${isConnected ? 'mdi-check-decagram' : 'mdi-alert-circle'}"></i> 
+            ${isConnected ? (I18N.currentLang === 'ar' ? 'متصل بالسحابة (مزامنة حية)' : 'Connected & Synced') : (I18N.currentLang === 'ar' ? 'غير متصل (يعمل محلياً)' : 'Offline / Local')}
           </span>
         </div>
 
-        <p class="text-muted text-sm mb-4">
+        <p class="text-secondary text-sm mb-4">
           ${I18N.currentLang === 'ar' 
-            ? 'تتيح قاعدة بيانات Supabase مشاركة الأفكار والتصويت والتعليقات فورياً وبشكل حي بين كافة أجهزة الموظفين والمحكمين حول العالم.' 
+            ? 'تتيح قاعدة بيانات Supabase مشاركة الأفكار والتصويت والتحكيم فورياً وبشكل حي بين كافة الأجهزة (الهواتف، الأجهزة اللوحية، الحواسيب) لأعضاء هيئة التدريس واللجان.' 
             : 'Supabase PostgreSQL cloud database synchronizes ideas, votes, comments, and evaluations in real-time across all devices.'}
         </p>
 
+        <!-- Live Database Stats Grid -->
+        <div class="db-stats-grid mb-4">
+          <div class="db-stat-card">
+            <div class="db-stat-icon text-primary"><i class="mdi mdi-lightbulb-multiple"></i></div>
+            <div class="db-stat-val">${State.ideas.length}</div>
+            <div class="db-stat-lbl">${I18N.currentLang === 'ar' ? 'الأفكار المسجلة' : 'Total Ideas'}</div>
+          </div>
+          <div class="db-stat-card">
+            <div class="db-stat-icon text-gold"><i class="mdi mdi-account-group"></i></div>
+            <div class="db-stat-val">${State.users.length}</div>
+            <div class="db-stat-lbl">${I18N.currentLang === 'ar' ? 'المستخدمين' : 'Total Users'}</div>
+          </div>
+          <div class="db-stat-card">
+            <div class="db-stat-icon text-info"><i class="mdi mdi-domain"></i></div>
+            <div class="db-stat-val">${State.departments.length}</div>
+            <div class="db-stat-lbl">${I18N.currentLang === 'ar' ? 'الكليات والعمادات' : 'Departments'}</div>
+          </div>
+          <div class="db-stat-card">
+            <div class="db-stat-icon text-success"><i class="mdi mdi-shape"></i></div>
+            <div class="db-stat-val">${State.categories.length}</div>
+            <div class="db-stat-lbl">${I18N.currentLang === 'ar' ? 'التصنيفات' : 'Categories'}</div>
+          </div>
+        </div>
+
         <div class="form-group mb-3">
-          <label class="form-label font-bold">${I18N.currentLang === 'ar' ? 'رابط المشروع (Project URL):' : 'Project URL:'}</label>
+          <label class="form-label font-bold">${I18N.currentLang === 'ar' ? 'رابط مشروع Supabase:' : 'Supabase Project URL:'}</label>
           <input type="text" class="form-control" value="${url}" readonly />
         </div>
 
-        <div class="d-flex gap-2 mt-4">
+        <div class="d-flex gap-3 mt-4 flex-wrap">
           <button type="button" class="btn btn-primary" onclick="AdminPortal.pushAllToSupabase()">
-            <i class="mdi mdi-cloud-upload"></i> ${I18N.currentLang === 'ar' ? 'رفع ومزامنة البيانات الحالية إلى Supabase' : 'Push & Seed All Data to Supabase'}
+            <i class="mdi mdi-cloud-upload"></i> ${I18N.currentLang === 'ar' ? 'رفع ومزامنة كافة البيانات الحالية إلى السحابة' : 'Push & Seed All Data to Cloud'}
           </button>
           <button type="button" class="btn btn-outline" onclick="AdminPortal.pullFromSupabase()">
-            <i class="mdi mdi-cloud-download"></i> ${I18N.currentLang === 'ar' ? 'سحب التحديثات من Supabase' : 'Fetch Latest from Supabase'}
+            <i class="mdi mdi-cloud-download"></i> ${I18N.currentLang === 'ar' ? 'جلب أحدث البيانات من السحابة' : 'Pull Latest Data from Cloud'}
           </button>
+        </div>
+
+        <!-- SQL Setup Helper Box -->
+        <div class="sql-helper-box mt-4">
+          <div class="d-flex justify-between items-center mb-2">
+            <h5 class="font-bold text-sm mb-0"><i class="mdi mdi-code-braces text-primary"></i> ${I18N.currentLang === 'ar' ? 'كود إنشاء الجداول والصلاحيات في Supabase (SQL Schema)' : 'Supabase SQL Setup Script'}</h5>
+            <button type="button" class="btn btn-sm btn-outline" onclick="navigator.clipboard.writeText(document.getElementById('sql-schema-code').innerText); App.showToast(I18N.currentLang === 'ar' ? 'تم نسخ كود SQL إلى الحافظة! 📋' : 'SQL copied to clipboard! 📋', 'success');">
+              <i class="mdi mdi-content-copy"></i> ${I18N.currentLang === 'ar' ? 'نسخ كود SQL' : 'Copy SQL'}
+            </button>
+          </div>
+          <pre id="sql-schema-code" class="sql-code-block"><code>CREATE TABLE IF NOT EXISTS public.departments (id TEXT PRIMARY KEY, name_ar TEXT, name_en TEXT, code TEXT);
+CREATE TABLE IF NOT EXISTS public.job_titles (id TEXT PRIMARY KEY, title_ar TEXT, title_en TEXT);
+CREATE TABLE IF NOT EXISTS public.categories (id TEXT PRIMARY KEY, name_ar TEXT, name_en TEXT, icon TEXT, color TEXT);
+CREATE TABLE IF NOT EXISTS public.users (id TEXT PRIMARY KEY, username TEXT, full_name TEXT, email TEXT, password TEXT, department_id TEXT, job_title_id TEXT, role TEXT DEFAULT 'employee', points INT DEFAULT 100, badges JSONB DEFAULT '["new_innovator"]'::jsonb, avatar TEXT);
+CREATE TABLE IF NOT EXISTS public.ideas (id TEXT PRIMARY KEY, title_ar TEXT, title_en TEXT, desc_ar TEXT, desc_en TEXT, impact_ar TEXT, impact_en TEXT, budget TEXT, category_id TEXT, department_id TEXT, target_dept_id TEXT, author_id TEXT, author_name TEXT, author_dept TEXT, author_avatar TEXT, status TEXT DEFAULT 'submitted', tags JSONB DEFAULT '[]'::jsonb, ai_score INT DEFAULT 80, ai_summary TEXT, votes JSONB DEFAULT '[]'::jsonb, downvotes JSONB DEFAULT '[]'::jsonb, comments JSONB DEFAULT '[]'::jsonb, evaluation JSONB, created_at TIMESTAMPTZ DEFAULT NOW());
+ALTER TABLE public.departments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.job_titles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ideas ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public full access depts" ON public.departments FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access jobs" ON public.job_titles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access cats" ON public.categories FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access users" ON public.users FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access ideas" ON public.ideas FOR ALL USING (true) WITH CHECK (true);</code></pre>
         </div>
       </div>
     `;

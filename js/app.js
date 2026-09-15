@@ -91,8 +91,37 @@ const App = {
   renderHeader() {
     const user = State.currentUser || {};
     const dept = State.getDepartment(user.departmentId);
+    const isConn = window.SupabaseService && window.SupabaseService.isConnected;
 
     return `
+      <!-- Top Demo Role Switcher & Cloud Status Banner -->
+      <div class="top-role-bar">
+        <div class="container top-role-container">
+          <div class="top-role-left">
+            <div id="cloud-sync-status-badge" class="cloud-sync-pill ${isConn ? 'connected' : 'error'}" onclick="SupabaseService.syncAllFromRemote(); App.showToast(I18N.currentLang === 'ar' ? 'جارٍ فحص المزامنة مع قاعدة البيانات...' : 'Checking database sync...', 'info');" title="انقر لتحديث ومزامنة البيانات السحابية فوراً">
+              <span class="pulse-dot"></span>
+              <span>${isConn ? (I18N.currentLang === 'ar' ? 'سحابي متصل' : 'Cloud Synced') : (I18N.currentLang === 'ar' ? 'يعمل محلياً' : 'Offline')}</span>
+              <i class="mdi mdi-refresh text-xs"></i>
+            </div>
+          </div>
+
+          <div class="top-role-right">
+            <span class="role-switch-label"><i class="mdi mdi-account-switch"></i> ${I18N.currentLang === 'ar' ? 'التبديل السريع للأدوار:' : 'Quick Role Switch:'}</span>
+            <div class="role-pill-group">
+              <button class="role-pill-btn ${user.role === 'admin' ? 'active-admin' : ''}" onclick="App.switchDemoRole('admin')" title="الدخول كمدير النظام للوصول إلى لوحة التحكم والإعدادات">
+                <i class="mdi mdi-shield-crown"></i> ${I18N.currentLang === 'ar' ? 'مدير النظام (Admin)' : 'Admin'}
+              </button>
+              <button class="role-pill-btn ${user.role === 'committee' ? 'active-comm' : ''}" onclick="App.switchDemoRole('committee')" title="الدخول كعضو لجنة التحكيم لتقييم الأفكار">
+                <i class="mdi mdi-scale-balance"></i> ${I18N.currentLang === 'ar' ? 'لجنة التحكيم' : 'Committee'}
+              </button>
+              <button class="role-pill-btn ${user.role === 'employee' ? 'active-emp' : ''}" onclick="App.switchDemoRole('employee')" title="الدخول كموظف لتقديم وتصفح الأفكار">
+                <i class="mdi mdi-lightbulb-on"></i> ${I18N.currentLang === 'ar' ? 'موظف' : 'Employee'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <header class="app-header">
         <div class="container header-container">
           <div class="header-brand" onclick="App.navigate('home')">
@@ -106,22 +135,20 @@ const App = {
             <button class="nav-link btn-nav-highlight ${this.currentView === 'submit_idea' ? 'active' : ''}" onclick="App.navigate('submit_idea')">
               <i class="mdi mdi-plus-circle"></i> ${I18N.t('navSubmitIdea')}
             </button>
-            ${Auth.isCommittee() ? `
-              <button class="nav-link ${this.currentView === 'committee' ? 'active' : ''}" onclick="App.navigate('committee')">
-                <i class="mdi mdi-scale-balance"></i> ${I18N.t('navCommittee')}
-              </button>
-            ` : ''}
+            <button class="nav-link ${this.currentView === 'committee' ? 'active' : ''}" onclick="App.navigate('committee')">
+              <i class="mdi mdi-scale-balance"></i> ${I18N.t('navCommittee')}
+              ${!Auth.isCommittee() && !Auth.isAdmin() ? `<span class="nav-badge-lock" title="مخصص للمحكمين"><i class="mdi mdi-lock"></i></span>` : ''}
+            </button>
             <button class="nav-link ${this.currentView === 'dashboard' ? 'active' : ''}" onclick="App.navigate('dashboard')">
               <i class="mdi mdi-chart-box-outline"></i> ${I18N.t('navDashboard')}
             </button>
             <button class="nav-link ${this.currentView === 'leaderboard' ? 'active' : ''}" onclick="App.navigate('leaderboard')">
               <i class="mdi mdi-trophy-outline"></i> ${I18N.t('navLeaderboard')}
             </button>
-            ${Auth.isAdmin() ? `
-              <button class="nav-link ${this.currentView === 'admin' ? 'active' : ''}" onclick="App.navigate('admin')">
-                <i class="mdi mdi-cogs"></i> ${I18N.t('navAdmin')}
-              </button>
-            ` : ''}
+            <button class="nav-link btn-admin-nav ${this.currentView === 'admin' ? 'active' : ''}" onclick="App.navigate('admin')">
+              <i class="mdi mdi-cogs"></i> ${I18N.t('navAdmin')}
+              ${!Auth.isAdmin() ? `<span class="nav-badge-lock" title="مخصص للمدير"><i class="mdi mdi-shield-account"></i></span>` : `<span class="nav-admin-dot"></span>`}
+            </button>
           </nav>
 
           <div class="header-actions">
@@ -141,7 +168,7 @@ const App = {
               <img src="${user.avatar || 'assets/images/fikra-logo.svg'}" class="user-header-avatar" />
               <div class="user-header-details">
                 <span class="user-header-name">${user.fullName || ''}</span>
-                <span class="user-header-role">${I18N.getText(dept.nameAr, dept.nameEn)}</span>
+                <span class="user-header-role">${user.role === 'admin' ? '👑 مدير النظام' : user.role === 'committee' ? '⚖️ محكّم معتمد' : I18N.getText(dept.nameAr, dept.nameEn)}</span>
               </div>
             </div>
 
@@ -152,6 +179,25 @@ const App = {
         </div>
       </header>
     `;
+  },
+
+  switchDemoRole(role) {
+    if (role === 'admin') {
+      Auth.login('admin', 'Password123!');
+      this.currentView = 'admin';
+      this.render();
+      this.showToast(I18N.currentLang === 'ar' ? '👑 تم تسجيل الدخول كمدير النظام (Admin) — مرحباً أ. خالد الحازمي' : '👑 Switched to Admin Account', 'success');
+    } else if (role === 'committee') {
+      Auth.login('committee', 'Password123!');
+      this.currentView = 'committee';
+      this.render();
+      this.showToast(I18N.currentLang === 'ar' ? '⚖️ تم تسجيل الدخول كعضو لجنة التحكيم — مرحباً د. محمد القرني' : '⚖️ Switched to Committee Account', 'info');
+    } else {
+      Auth.login('employee', 'Password123!');
+      this.currentView = 'home';
+      this.render();
+      this.showToast(I18N.currentLang === 'ar' ? '💡 تم تسجيل الدخول كموظف — مرحباً د. سارة الشهراني' : '💡 Switched to Employee Account', 'info');
+    }
   },
 
   renderMobileBottomNav() {
@@ -252,6 +298,25 @@ const App = {
         <button type="submit" class="btn btn-primary btn-block btn-lg">
           <i class="mdi mdi-login"></i> ${I18N.t('loginBtn')}
         </button>
+
+        <!-- Quick 1-Click Demo Login Bar -->
+        <div class="quick-demo-login-card mt-3">
+          <div class="text-xs text-muted text-center font-bold mb-2">⚡ ${I18N.currentLang === 'ar' ? 'تجربة سريعة بنقرة واحدة (بدون كتابة كلمة المرور):' : 'Quick 1-Click Demo Sign-in:'}</div>
+          <div class="demo-login-btns-grid">
+            <button type="button" class="btn-demo-quick demo-admin" onclick="App.switchDemoRole('admin')">
+              <i class="mdi mdi-shield-crown"></i>
+              <span>${I18N.currentLang === 'ar' ? 'مدير النظام' : 'Admin'}</span>
+            </button>
+            <button type="button" class="btn-demo-quick demo-committee" onclick="App.switchDemoRole('committee')">
+              <i class="mdi mdi-scale-balance"></i>
+              <span>${I18N.currentLang === 'ar' ? 'لجنة التحكيم' : 'Committee'}</span>
+            </button>
+            <button type="button" class="btn-demo-quick demo-employee" onclick="App.switchDemoRole('employee')">
+              <i class="mdi mdi-lightbulb-on"></i>
+              <span>${I18N.currentLang === 'ar' ? 'موظف / باحث' : 'Employee'}</span>
+            </button>
+          </div>
+        </div>
 
         <div class="auth-divider">
           <span>${I18N.t('noAccountPrompt')}</span>
@@ -964,6 +1029,19 @@ const App = {
   },
 
   bindGlobalEvents() {
+    // Auto-sync when window gains focus (e.g. user returns from another app or tab)
+    window.addEventListener('focus', () => {
+      if (window.SupabaseService && window.SupabaseService.isConnected && !window.SupabaseService.isSyncing) {
+        window.SupabaseService.syncAllFromRemote(true);
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && window.SupabaseService && window.SupabaseService.isConnected && !window.SupabaseService.isSyncing) {
+        window.SupabaseService.syncAllFromRemote(true);
+      }
+    });
+
     // Global Modal close triggers
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
