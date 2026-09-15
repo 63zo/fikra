@@ -1241,3 +1241,45 @@
   margin-bottom: 1rem;
 }
 
+/* Active Tag Filter Indicator Bar */
+.active-filter-indicator-bar {
+  background: linear-gradient(135deg, rgba(197, 160, 89, 0.12), rgba(20, 87, 58, 0.08));
+  border: 1px solid rgba(197, 160, 89, 0.35);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.25s ease;
+}
+
+.active-filter-indicator-bar strong {
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+.btn-outline-danger {
+  border: 1px solid var(--color-danger);
+  background: transparent;
+  color: var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-danger:hover {
+  background: var(--color-danger);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+

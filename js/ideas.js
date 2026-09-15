@@ -155,24 +155,54 @@ const IdeasManager = {
     return { success: true, comment: newComment };
   },
 
+  normalizeTagQuery(text) {
+    if (!text) return '';
+    return String(text)
+      .toLowerCase()
+      .replace(/[\u064B-\u065F]/g, '')
+      .replace(/[\u0640]/g, '')
+      .replace(/[أإآ]/g, 'ا')
+      .replace(/ى/g, 'ي')
+      .replace(/ة/g, 'ه')
+      .replace(/ؤ/g, 'و')
+      .replace(/ئ/g, 'ي')
+      .replace(/[_\-#]/g, ' ')
+      .replace(/[^\w\s\u0600-\u06FF]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  },
+
   // Filter feed by specific tag when user clicks a hashtag
   filterByTag(rawTag) {
     if (!rawTag) return;
-    const tag = String(rawTag).replace(/^#/, '').trim();
-    this.activeFilter.search = tag;
+    const cleanTag = String(rawTag).replace(/^#/, '').trim();
+    
+    // Reset dropdown filters so they don't conflict
+    this.activeFilter.dept = 'all';
+    this.activeFilter.status = 'all';
+    this.activeFilter.category = 'all';
+    this.activeFilter.search = cleanTag;
+    this.activeFilter.activeTag = cleanTag;
 
     if (window.App.currentView !== 'home') {
-      window.App.navigate('home');
+      window.App.currentView = 'home';
+      window.App.render();
     }
 
     if (window.App.closeGlobalModal) {
       window.App.closeGlobalModal();
     }
 
+    // Sync input values on page
     const searchInput = document.getElementById('feed-search-input');
-    if (searchInput) {
-      searchInput.value = '#' + tag;
-    }
+    if (searchInput) searchInput.value = '#' + cleanTag;
+    
+    const deptSelect = document.getElementById('filter-dept-select');
+    if (deptSelect) deptSelect.value = 'all';
+    const catSelect = document.getElementById('filter-cat-select');
+    if (catSelect) catSelect.value = 'all';
+    const statusSelect = document.getElementById('filter-status-select');
+    if (statusSelect) statusSelect.value = 'all';
 
     this.refreshFeed();
 
@@ -182,9 +212,17 @@ const IdeasManager = {
     }
 
     window.App.showToast(
-      I18N.currentLang === 'ar' ? `🔍 تم تصفية الأفكار بالوسم: #${tag}` : `🔍 Filtered by tag: #${tag}`,
+      I18N.currentLang === 'ar' ? `🔍 تصفية الأفكار بالوسم: #${cleanTag}` : `🔍 Filtered by tag: #${cleanTag}`,
       'info'
     );
+  },
+
+  clearTagFilter() {
+    this.activeFilter.search = '';
+    this.activeFilter.activeTag = null;
+    const searchInput = document.getElementById('feed-search-input');
+    if (searchInput) searchInput.value = '';
+    this.refreshFeed();
   },
 
   // Get filtered and sorted ideas
@@ -209,19 +247,22 @@ const IdeasManager = {
     // Search Query & Tag Match
     if (this.activeFilter.search && this.activeFilter.search.trim()) {
       const cleanSearch = this.activeFilter.search.trim().replace(/^#/, '');
-      const q = AIEngine.normalizeArabic(cleanSearch);
+      const normQ = this.normalizeTagQuery(cleanSearch);
+      const qWords = normQ.split(' ').filter(Boolean);
+
       list = list.filter(i => {
-        // Tag Match
+        // 1. Direct Tag Match
         const tagMatch = (i.tags || []).some(t => {
-          const normTag = AIEngine.normalizeArabic(String(t).replace(/^#/, ''));
-          return normTag.includes(q) || q.includes(normTag);
+          const normTag = this.normalizeTagQuery(String(t));
+          return normTag.includes(normQ) || normQ.includes(normTag);
         });
         if (tagMatch) return true;
 
-        const fullDoc = AIEngine.normalizeArabic(
+        // 2. Full text match
+        const fullDoc = this.normalizeTagQuery(
           `${i.titleAr} ${i.titleEn} ${i.descAr} ${i.descEn} ${i.authorName} ${(i.tags || []).join(' ')}`
         );
-        return fullDoc.includes(q);
+        return qWords.every(w => fullDoc.includes(w));
       });
     }
 
@@ -259,21 +300,34 @@ const IdeasManager = {
     if (!container) return;
 
     const ideas = this.getFilteredIdeas();
+
+    const activeTagBanner = this.activeFilter.activeTag ? `
+      <div class="active-filter-indicator-bar mb-3">
+        <div class="d-flex items-center gap-2">
+          <i class="mdi mdi-tag-check text-gold font-bold"></i>
+          <span>${I18N.currentLang === 'ar' ? 'عرض الأفكار الموسومة بـ:' : 'Showing ideas tagged with:'} <strong>#${this.activeFilter.activeTag}</strong> (${ideas.length} ${I18N.currentLang === 'ar' ? 'فكرة' : 'ideas'})</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="IdeasManager.clearTagFilter()">
+          <i class="mdi mdi-close"></i> ${I18N.currentLang === 'ar' ? 'إلغاء التصفية' : 'Clear Filter'}
+        </button>
+      </div>
+    ` : '';
+
     if (ideas.length === 0) {
-      container.innerHTML = `
+      container.innerHTML = activeTagBanner + `
         <div class="empty-state-box">
           <div class="empty-state-icon"><i class="mdi mdi-lightbulb-off-outline"></i></div>
           <h3>${I18N.t('noIdeasFound')}</h3>
-          <p>${I18N.currentLang === 'ar' ? 'جرب تغيير خيارات التصفية أو كن أول من يطرح فكرة ملهمة!' : 'Try changing your filters or be the first to submit an idea!'}</p>
-          <button class="btn btn-primary" onclick="App.navigate('submit_idea')">
-            <i class="mdi mdi-plus-circle"></i> ${I18N.t('navSubmitIdea')}
+          <p>${I18N.currentLang === 'ar' ? 'لا توجد أفكار تطابق خيارات التصفية الحالية.' : 'No ideas match your current filter.'}</p>
+          <button type="button" class="btn btn-outline" onclick="IdeasManager.clearTagFilter()">
+            <i class="mdi mdi-restore"></i> ${I18N.currentLang === 'ar' ? 'عرض كافة الأفكار' : 'Show All Ideas'}
           </button>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = ideas.map(idea => this.renderIdeaCardHTML(idea)).join('');
+    container.innerHTML = activeTagBanner + ideas.map(idea => this.renderIdeaCardHTML(idea)).join('');
   },
 
   renderIdeaCardHTML(idea) {
